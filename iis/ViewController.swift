@@ -25,7 +25,9 @@ struct Stack {
     }
 }
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
+   
+    
 
     var attributes = ["city": ["London","Liverpool","Manchester","other"],
                       "color":["white","red","blue","blue-white"],
@@ -144,25 +146,93 @@ class ViewController: UIViewController {
     @IBOutlet weak var textField: UITextField!
     @IBOutlet weak var OKbutton: UIButton!
     var targets = Stack()
-    var rulesStack = Stack()
-    var contextStack = Stack()
+    var context = [Any]()
+    var conditionsToknow = [String]()
+     var categoryPicker = UIPickerView()
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.setupCategoryTextField()
+        self.categoryPicker.delegate = self
+        self.categoryPicker.dataSource = self
+        self.categoryPicker.backgroundColor = .white
+
+        targets.push("club")
+        start()
 
     }
+    
+    func setupCategoryTextField() {
+        let toolbar = UIToolbar()
+        let doneButton = UIBarButtonItem.init(title: "done", style: .plain, target: self, action: #selector(pickerViewDone))
+        let space = UIBarButtonItem.init(barButtonSystemItem: UIBarButtonItem.SystemItem.flexibleSpace, target: nil, action: nil)
+        let cancelButton = UIBarButtonItem.init(title: "cancel", style: .plain, target: self, action: #selector(pickerViewCancel))
+        toolbar.items = [cancelButton, space, doneButton]
+        self.textField.inputView = categoryPicker
+        self.textField.inputAccessoryView = toolbar
+        toolbar.sizeToFit()
+    }
+    
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+           return 1
+       }
+       
+       func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        self.conditionsToknow.count
+       }
+    @objc func pickerViewDone() {
+     
+       
+        self.textField.resignFirstResponder()
+        
+    }
+
+    @objc func pickerViewCancel() {
+        self.textField.resignFirstResponder()
+    }
+    
     func start(){
-        while (true) {
-            var targets = Stack()
-            
+      
+        let a = getconditions(i: 5)
+        self.conditionsToknow =  checkThen(conditions: a)
+        let aaa = "fwefwf"
+        
+    }
+    
+    
+    func getconditions(i:Int) -> [String]{
+        let rule = rules[i]
+        let ifconditions = rule["if"]
+        var curentconditions = [String]()
+        for (key,_) in ifconditions!{
+            curentconditions.append(key)
+        }
+        
+        return curentconditions
+    }
+    
+    func checkThen(conditions:[String])->[String]{
+        var answer = conditions
+        var useConditions = Set<String>()
+        for condition in conditions {
+            for rule in self.rules{
+                if  let thenRule = rule["then"]{
+                    for (key,_) in thenRule{
+                        if (condition == key){
+                            useConditions.insert(key)
+                            answer += self.getconditions(i: self.rules.firstIndex(of: rule)!)
+                        }
+                }
+            }
         }
     }
-    
-    
-    
-    
-    
-    
+        for cond in useConditions{
+            targets.push(cond)
+        }
+        let setConditions = Set(answer)
+        let substracking = setConditions.subtracting(useConditions)
+    return Array(substracking)
     }
 
 
 
+}
