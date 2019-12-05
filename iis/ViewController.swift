@@ -9,7 +9,7 @@
 import UIKit
 
 struct Stack {
-    private var items: [String] = []
+     var items: [String] = []
     
     func peek() -> String {
         guard let topElement = items.first else { fatalError("This stack is empty.") }
@@ -22,6 +22,15 @@ struct Stack {
   
     mutating func push(_ element: String) {
         items.insert(element, at: 0)
+    }
+    
+    func isEmpty() -> Bool{
+        if items.count == 0 {
+            return true
+        }
+        else {
+            return false
+        }
     }
 }
 
@@ -50,7 +59,21 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
                    "then": [
                 "number of championship cups" : "1+"
                    ]],
-                
+                [ "if": ["years of foundation" : "<1890",
+                           "color" : "blue"],
+                   "then": [
+                "number of championship cups" : "0"
+                   ]],
+                [ "if": ["years of foundation" : "1890+",
+                                          "color" : "blue"],
+                                  "then": [
+                               "number of championship cups" : "1+"
+                                  ]],
+                [ "if": ["years of foundation" : "1890+",
+                           "color" : "blue-white"],
+                   "then": [
+                "number of championship cups" : "1+"
+                   ]],
                 [ "if": [
                     "color": "white",
                     "years of foundation" : "<1890"],
@@ -148,7 +171,10 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     var targets = Stack()
     var context = [Any]()
     var conditionsToknow = [String]()
-     var categoryPicker = UIPickerView()
+    var answersToKnow = [String]()
+    var categoryPicker = UIPickerView()
+    var usedRules = [Int]()
+    var count = 0;
     override func viewDidLoad() {
         super.viewDidLoad()
         self.setupCategoryTextField()
@@ -158,8 +184,14 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
 
         targets.push("club")
         start()
-
+        self.setupTextlabel()
     }
+    
+    func setupTextlabel(){
+        let string = self.conditionsToknow[count]
+        self.textLabel.text = "What is yourth " + string
+    }
+    
     
     func setupCategoryTextField() {
         let toolbar = UIToolbar()
@@ -177,10 +209,34 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
        }
        
        func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        self.conditionsToknow.count
+        if count != -1{
+        let condition = self.conditionsToknow[count]
+        let answers = self.attributes[condition]!
+        return answers.count
+        }
+        else{
+         return 0
+        }
        }
+    
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+            
+        let atribute = self.conditionsToknow[count]
+        if let answers = self.attributes[atribute]{
+            return answers[row]
+        }
+        else{
+           return ""
+        }
+       }
+    
+    
     @objc func pickerViewDone() {
-     
+        let atribute = self.conditionsToknow[count]
+               if let answers = self.attributes[atribute]{
+                let row = self.categoryPicker.selectedRow(inComponent: 0)
+                self.textField.text = answers[row]
+               }
        
         self.textField.resignFirstResponder()
         
@@ -192,10 +248,9 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     
     func start(){
       
-        let a = getconditions(i: 5)
+        let a = getconditions(i: 8)
         self.conditionsToknow =  checkThen(conditions: a)
         let aaa = "fwefwf"
-        
     }
     
     
@@ -232,7 +287,80 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         let substracking = setConditions.subtracting(useConditions)
     return Array(substracking)
     }
-
-
+    
+    @IBAction func OkButtonTapped(_ sender: Any) {
+        if self.count == -1 {
+             self.textField.text = ""
+            self.count = 0
+            self.answersToKnow.removeAll()
+            self.conditionsToknow.removeAll()
+            self.OKbutton.setTitle("OK", for: .normal)
+            self.start()
+            self.setupTextlabel()
+            return
+        }
+        
+        if (self.count < 2 ){
+        self.OKbutton.setTitle("OK", for: .normal)
+        self.count += 1
+        self.setupTextlabel()
+        self.answersToKnow.append(self.textField.text!)
+        self.textField.text = ""
+        }
+        else{
+             self.answersToKnow.append(self.textField.text!)
+             self.textField.text = ""
+            self.count = -1
+            self.OKbutton.setTitle("Repeat", for: .normal)
+            self.textLabel.text = ""
+            checkRules()
+            for world in self.answersToKnow {
+                print(world)
+            }
+        }
+        
+        
+        
+    }
+    
+    func checkRules(){
+        for target in self.targets.items{
+            for rule in self.rules{
+                if let thenCondition = rule["then"]{
+                    for (kkey,vvalue ) in thenCondition{
+                        if kkey == target{
+                if let ifConditions = rule["if"]{
+                    var aaa = Set<String>()
+                    var bbb = Set<String>()
+                    for (key,value) in ifConditions{
+                        aaa.insert(key)
+                        bbb.insert(value)
+                    }
+                    let conditionsToKnowSet = Set(self.conditionsToknow)
+                    if aaa.subtracting(conditionsToKnowSet).count == 0 && bbb.subtracting(answersToKnow).count == 0{
+                    
+                    let newCondition =    self.targets.pop()
+                        let indexRule = self.rules.firstIndex(of: rule) ?? -1
+                        self.usedRules.append(indexRule)
+                    let newAnswer = vvalue
+                        self.answersToKnow.append(newAnswer)
+                        self.conditionsToknow.append(newCondition)
+                        checkRules()
+                        if self.targets.items.count == 0{
+                            self.textLabel.text = "your club is " + self.answersToKnow.last!
+                            print(self.usedRules)
+                        }
+                        return
+                    }
+                }
+                        }
+                    }
+                }
+            }
+        }
+         self.textLabel.text = "cant find yourth club"
+         print(self.usedRules)
+    }
+ 
 
 }

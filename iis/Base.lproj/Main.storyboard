@@ -32,6 +32,9 @@
                                 <rect key="frame" x="154" y="321" width="106" height="61"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="OK"/>
+                                <connections>
+                                    <action selector="OkButtonTapped:" destination="BYZ-38-t0r" eventType="touchUpInside" id="IaR-xB-awm"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
